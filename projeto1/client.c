@@ -13,7 +13,6 @@
 #define MAX_GENRE_LEN 20
 
 struct movie {
-    int id;
     char title[MAX_TITLE_LEN];
     char genres[MAX_GENRES][MAX_GENRE_LEN];
     int genre_count;
@@ -21,14 +20,9 @@ struct movie {
     int year;
 };
 
-struct add_genre_payload {
+struct genre_addition_params {
     int id;
-    char *genre;
-};
-
-struct request_movie_addition {
-    int operation;
-    struct movie m;
+    char genre[MAX_GENRE_LEN];
 };
 
 int main(int argc, char *argv[]) {
@@ -61,19 +55,33 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    struct movie m = {
-        .id = 1,
-        .year = 1994,
-        .genre_count = 2
-    };
-    strcpy(m.title, "The Shawshank Redemption");
-    strcpy(m.genres[0], "Drama");
-    strcpy(m.genres[1], "Crime");
-    strcpy(m.director, "Frank Darabont");
 
-    int operation = 1;
+    // Exemplo operação de salvar filme:
+    // struct movie m = {
+    //     .year = 1994,
+    //     .genre_count = 2
+    // };
+    // strcpy(m.title, "The Shawshank Redemption");
+    // strcpy(m.genres[0], "Drama");
+    // strcpy(m.genres[1], "Crime");
+    // strcpy(m.director, "Frank Darabont");
+    // int operation = 1;
+    // send(sockfd, &operation, sizeof(int), 0);
+    // send(sockfd, &m, sizeof(m), 0);
+
+    // Exemplo operação de atualizar a lista de gêneros:
+    // int operation = 2;
+    // struct genre_addition_params gap;
+    // gap.id = 1;
+    // strcpy(gap.genre, "Drama");
+    // send(sockfd, &operation, sizeof(int), 0);
+    // send(sockfd, &gap, sizeof(gap), 0);
+
+    // Exemplo operação de deletar filme com base no id:
+    int operation = 3;
+    int id = 1;
     send(sockfd, &operation, sizeof(int), 0);
-    send(sockfd, &m, sizeof(m), 0);
+    send(sockfd, &id, sizeof(int), 0);
 
     // Recebe dados
     if ((numbytes = recv(sockfd, buf, MAXDATASIZE - 1, 0)) == -1) {
