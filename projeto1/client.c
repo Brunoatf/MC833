@@ -3,29 +3,87 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include "movie.h"
 
-#define PORT 3490
 #define MAXDATASIZE 100
 
-#define MAX_TITLE_LEN 100
-#define MAX_DIRECTOR_LEN 100
-#define MAX_GENRES 3
-#define MAX_GENRE_LEN 20
+// Funções auxiliares para cada operação
+static void send_save_movie(int sockfd) {
+    struct movie m = {
+        .year = 1994,
+        .genre_count = 2
+    };
+    strcpy(m.title, "The Shawshank Redemption");
+    strcpy(m.genres[0], "Drama");
+    strcpy(m.genres[1], "Crime");
+    strcpy(m.director, "Frank Darabont");
 
-struct movie {
-    char title[MAX_TITLE_LEN];
-    char genres[MAX_GENRES][MAX_GENRE_LEN];
-    int genre_count;
-    char director[MAX_DIRECTOR_LEN];
-    int year;
-};
+    int operation = OP_SAVE_MOVIE;
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, &m, sizeof(m), 0);
+}
 
-struct genre_addition_params {
-    int id;
-    char genre[MAX_GENRE_LEN];
-};
+static void send_add_genre(int sockfd) {
+    int operation = OP_ADD_GENRE;
+    struct genre_addition_params gap;
+    gap.id = 1;
+    strcpy(gap.genre, "Drama");
+
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, &gap, sizeof(gap), 0);
+}
+
+static void send_remove_movie(int sockfd) {
+    int operation = OP_REMOVE_MOVIE;
+    int id = 1;
+
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, &id, sizeof(int), 0);
+}
+
+static void send_list_titles(int sockfd) {
+    int operation = OP_LIST_TITLES;
+    send(sockfd, &operation, sizeof(int), 0);
+}
+
+static void send_list_all(int sockfd) {
+    int operation = OP_LIST_ALL;
+    send(sockfd, &operation, sizeof(int), 0);
+}
+
+static void send_list_by_genre(int sockfd) {
+    int operation = OP_LIST_BY_GENRE;
+    char genre[MAX_GENRE_LEN] = "Drama";
+
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, genre, sizeof(genre), 0);
+}
+
+static void send_list_by_year(int sockfd) {
+    int operation = OP_LIST_BY_YEAR;
+    int year = 1994;
+
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, &year, sizeof(year), 0);
+}
+
+static void send_list_by_director(int sockfd) {
+    int operation = OP_LIST_BY_DIRECTOR;
+    char director[MAX_DIRECTOR_LEN] = "Frank Darabont";
+
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, director, sizeof(director), 0);
+}
 
 int main(int argc, char *argv[]) {
+    /*
+     * Cliente para o servidor de filmes.
+     * 
+     * Uso: ./client <IP do servidor>
+     * 
+     * Exemplo: ./client 127.0.0.1
+     */
+
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
     struct sockaddr_in server_addr;
@@ -55,35 +113,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    // Exemplo de uso: remove um filme
+    send_remove_movie(sockfd);
 
-    // Exemplo operação de salvar filme:
-    // struct movie m = {
-    //     .year = 1994,
-    //     .genre_count = 2
-    // };
-    // strcpy(m.title, "The Shawshank Redemption");
-    // strcpy(m.genres[0], "Drama");
-    // strcpy(m.genres[1], "Crime");
-    // strcpy(m.director, "Frank Darabont");
-    // int operation = 1;
-    // send(sockfd, &operation, sizeof(int), 0);
-    // send(sockfd, &m, sizeof(m), 0);
-
-    // Exemplo operação de atualizar a lista de gêneros:
-    // int operation = 2;
-    // struct genre_addition_params gap;
-    // gap.id = 1;
-    // strcpy(gap.genre, "Drama");
-    // send(sockfd, &operation, sizeof(int), 0);
-    // send(sockfd, &gap, sizeof(gap), 0);
-
-    // Exemplo operação de deletar filme com base no id:
-    int operation = 3;
-    int id = 1;
-    send(sockfd, &operation, sizeof(int), 0);
-    send(sockfd, &id, sizeof(int), 0);
-
-    // Recebe dados
+    // Recebe resposta do servidor
     if ((numbytes = recv(sockfd, buf, MAXDATASIZE - 1, 0)) == -1) {
         perror("recv");
         exit(1);
