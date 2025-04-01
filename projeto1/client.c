@@ -3,11 +3,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include "movie.h"
 
 #define MAXDATASIZE 100
 
-// Funções auxiliares para cada operação
 static void send_save_movie(int sockfd) {
     struct movie m = {
         .year = 1994,
