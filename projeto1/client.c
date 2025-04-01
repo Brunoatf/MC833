@@ -7,6 +7,24 @@
 #define PORT 3490
 #define MAXDATASIZE 100
 
+struct movie {
+    int id;
+    char* title;
+    char** genre;
+    char* director;
+    int year;
+};
+
+struct add_genre_payload {
+    int id;
+    char *genre;
+};
+
+struct request_movie_addition {
+    int operation;
+    struct movie m;
+};
+
 int main(int argc, char *argv[]) {
     int sockfd, numbytes;
     char buf[MAXDATASIZE];
@@ -36,6 +54,18 @@ int main(int argc, char *argv[]) {
         close(sockfd);
         exit(1);
     }
+
+    int operation = 1;
+    struct movie m;
+    m.id = 1;
+    m.title = "The Shawshank Redemption";
+    m.genre = (char *[]){"Drama", "Crime"};
+    m.director = "Frank Darabont";
+    m.year = 1994;
+    struct request_movie_addition rma;
+    rma.operation = operation;
+    rma.m = m;
+    send(sockfd, &rma, sizeof(rma), 0);
 
     // Recebe dados
     if ((numbytes = recv(sockfd, buf, MAXDATASIZE - 1, 0)) == -1) {
