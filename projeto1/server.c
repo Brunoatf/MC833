@@ -22,28 +22,27 @@ struct add_genre_payload {
 };
 
 void process_message(int sock) {
-    char buffer[1024];
-    recv(sock, buffer, sizeof(buffer), 0);
 
-    int operation = *(int*)buffer;
-    void *payload = buffer + 4;
+    int operation;
+    recv(sock, &operation, sizeof(int), 0);
 
     switch (operation) {
         case 1: { // Adicionar filme
-            struct movie *m = (struct movie *) payload;
-            printf("Adicionar filme: %s (%d)\n", m->title, m->year);
+            struct movie m;
+            recv(sock, &m, sizeof(m), 0);
+            printf("Adicionar filme: %s (%d), dirigido por %s\n", m.title, m.year, m.director);
             break;
         }
-        case 2: { // Adicionar gênero
-            struct add_genre_payload *p = (struct add_genre_payload *) payload;
-            printf("Adicionar gênero: %s para filme %d\n", p->genre, p->id);
-            break;
-        }
-        case 3: { // Remover filme
-            int id_to_be_removed = *(int*) payload;
-            printf("Remover filme de ID %d\n", id_to_be_removed);
-            break;
-        }
+        // case 2: { // Adicionar gênero
+        //     struct add_genre_payload *p = (struct add_genre_payload *) payload;
+        //     printf("Adicionar gênero: %s para filme %d\n", p->genre, p->id);
+        //     break;
+        // }
+        // case 3: { // Remover filme
+        //     int id_to_be_removed = *(int*) payload;
+        //     printf("Remover filme de ID %d\n", id_to_be_removed);
+        //     break;
+        // }
     }
 }   
 

@@ -7,11 +7,17 @@
 #define PORT 3490
 #define MAXDATASIZE 100
 
+#define MAX_TITLE_LEN 100
+#define MAX_DIRECTOR_LEN 100
+#define MAX_GENRES 3
+#define MAX_GENRE_LEN 20
+
 struct movie {
     int id;
-    char* title;
-    char** genre;
-    char* director;
+    char title[MAX_TITLE_LEN];
+    char genres[MAX_GENRES][MAX_GENRE_LEN];
+    int genre_count;
+    char director[MAX_DIRECTOR_LEN];
     int year;
 };
 
@@ -55,17 +61,19 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    struct movie m = {
+        .id = 1,
+        .year = 1994,
+        .genre_count = 2
+    };
+    strcpy(m.title, "The Shawshank Redemption");
+    strcpy(m.genres[0], "Drama");
+    strcpy(m.genres[1], "Crime");
+    strcpy(m.director, "Frank Darabont");
+
     int operation = 1;
-    struct movie m;
-    m.id = 1;
-    m.title = "The Shawshank Redemption";
-    m.genre = (char *[]){"Drama", "Crime"};
-    m.director = "Frank Darabont";
-    m.year = 1994;
-    struct request_movie_addition rma;
-    rma.operation = operation;
-    rma.m = m;
-    send(sockfd, &rma, sizeof(rma), 0);
+    send(sockfd, &operation, sizeof(int), 0);
+    send(sockfd, &m, sizeof(m), 0);
 
     // Recebe dados
     if ((numbytes = recv(sockfd, buf, MAXDATASIZE - 1, 0)) == -1) {
