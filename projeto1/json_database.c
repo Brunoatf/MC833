@@ -14,7 +14,7 @@ static int generate_new_id(struct movie movies[], int count) {
     return max + 1;
 }
 
-int load_json_movies(struct movie movies[], int max) {
+int load_movies(struct movie movies[], int max) {
     FILE *file = fopen(JSON_FILE, "r");
 
     if (!file) {
