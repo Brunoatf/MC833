@@ -6,6 +6,11 @@
 #include <sys/socket.h>
 #include "movie.h"
 #include "json_database.h"
+#include <pthread.h>
+
+//Mutex para resolver o problema de concorrencia
+pthread_mutex_t json_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 static void handle_save_movie(int socket_fd) {
     struct movie m;
@@ -16,10 +21,12 @@ static void handle_save_movie(int socket_fd) {
         return;
     }
 
+    pthread_mutex_lock(&json_mutex);
     int id = add_movie(&m);
+    pthread_mutex_unlock(&json_mutex);
 
     char msg[100];
-    if (id >= 0) snprintf(msg, sizeof(msg), "Filme '%s' adicionado com sucesso !", m.title);
+    if (id >= 0) snprintf(msg, sizeof(msg), "Filme '%d' adicionado com sucesso !", id);
     else snprintf(msg, sizeof(msg),"Erro ao salvar filme");
 
     send(socket_fd, msg, strlen(msg), 0);
@@ -27,15 +34,18 @@ static void handle_save_movie(int socket_fd) {
 }
 
 static void handle_add_genre(int socket_fd) {
+    struct genre_addition_params gap;
     printf("operation: handle_add_genre");
 
-    struct genre_addition_params gap;
     if (recv(socket_fd, &gap, sizeof(gap), 0) <= 0) {
         perror("recv genre addition");
         return;
     }
 
+    pthread_mutex_lock(&json_mutex);
     int result = add_genre(gap.id, gap.genre);
+    pthread_mutex_unlock(&json_mutex);
+
     if (result == 1) {
         char msg[100];
         snprintf(msg, sizeof(msg), "Gênero \"%s\" adicionado ao filme de id %d.", gap.genre, gap.id);
@@ -62,7 +72,10 @@ static void handle_remove_movie(int socket_fd) {
         return;
     }
 
+    pthread_mutex_lock(&json_mutex);
     int result = remove_movie(id);
+    pthread_mutex_unlock(&json_mutex);
+
     if (result) {
         char msg[100];
         snprintf(msg, sizeof(msg), "Filme com id %d removido com sucesso.", id);
@@ -77,8 +90,9 @@ static void handle_remove_movie(int socket_fd) {
 
 static void handle_list_titles(int socket_fd) {
     struct movie movies[MAX_MOVIES];
-    int count = list_movies(movies, MAX_MOVIES);
     printf("operation: handle_list_titles");
+
+    int count = list_movies(movies, MAX_MOVIES);
 
     char buffer[2048] = {0};
     for (int i = 0; i < count; i++) {
@@ -97,9 +111,9 @@ static void handle_list_titles(int socket_fd) {
 
 static void handle_list_all(int socket_fd) {
     struct movie movies[MAX_MOVIES];
-    int count = list_movies(movies, MAX_MOVIES);
     printf("operation: handle_list_all");
 
+    int count = list_movies(movies, MAX_MOVIES);
 
     char buffer[4096] = {0};
     for (int i = 0; i < count; i++) {
@@ -134,6 +148,8 @@ static void handle_list_by_id(int socket_fd) {
     }
 
     struct movie m;
+
+    pthread_mutex_lock(&json_mutex);
     if (get_movie_by_id(id, &m)) {
         char msg[512];
         snprintf(msg, sizeof(msg),
@@ -150,6 +166,8 @@ static void handle_list_by_id(int socket_fd) {
         char *msg = "Filme não encontrado.";
         send(socket_fd, msg, strlen(msg), 0);
     }
+    pthread_mutex_unlock(&json_mutex);
+
 }
 
 
@@ -163,7 +181,10 @@ static void handle_list_by_genre(int socket_fd) {
     }
 
     struct movie movies[MAX_MOVIES];
+
+    pthread_mutex_lock(&json_mutex);
     int count = list_movies_by_genre(genre, movies, MAX_MOVIES);
+    pthread_mutex_unlock(&json_mutex);
 
     char buffer[4096] = {0};
     for (int i = 0; i < count; i++) {
@@ -180,9 +201,6 @@ static void handle_list_by_genre(int socket_fd) {
 
     send(socket_fd, buffer, strlen(buffer), 0);
 }
-
-
-
 
 static void handle_invalid_operation(int socket_fd, int operation) {
     printf("Operação inválida: %d\n", operation);
