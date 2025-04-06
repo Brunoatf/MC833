@@ -21,7 +21,7 @@ Este projeto simula um sistema de gerenciamento de filmes utilizando **sockets T
 
 ## Como Compilar
 
-No terminal (Linux/macOS), execute:
+No terminal, execute:
 
 ```bash
 make
@@ -48,14 +48,6 @@ Você verá no terminal:
 server: waiting for connections...
 ```
 
-E, ao receber requisições:
-
-```
-========================================
-server: conexão recebida de 127.0.0.1
-operation: handle_save_movie
-```
-
 ### 2. Inicie uma conexão
 
 Em outro terminal:
@@ -78,13 +70,6 @@ Escolha uma opção:
 0. Sair
 ```
 
-Após escolher uma operação, o cliente:
-
-- Solicita os campos necessários (ex: título, ano, ID etc.)
-- Envia ao servidor
-- Imprime a resposta recebida
-- Fecha a conexão
-
 ---
 
 ## Exemplo de banco (`movies.json`)
@@ -103,10 +88,3 @@ Após escolher uma operação, o cliente:
 ```
 
 ---
-
-## 🔧 Observações Técnicas
-
-- Cada operação é feita em uma **nova conexão TCP** (conexão curta).
-- O cliente interage por uma  **interface** no terminal.
-- O servidor é **concorrente**: aceita múltiplos clientes simultaneamente usando `fork()`.
-- O banco de dados persistente é o arquivo `movies.json`, manipulado com a biblioteca `cJSON`.
