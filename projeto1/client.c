@@ -61,7 +61,7 @@ void menu_loop(int sockfd) {
         switch (op) {
             case 1: {
                 struct movie m;
-                m.id = 0; // o servidor define
+                m.id = 0; 
                 read_string("Título: ", m.title, MAX_TITLE_LEN);
                 read_string("Diretor: ", m.director, MAX_DIRECTOR_LEN);
                 read_int("Ano: ", &m.year);
