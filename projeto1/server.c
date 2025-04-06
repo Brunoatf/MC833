@@ -5,78 +5,184 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include "movie.h"
+#include "json_database.h"
 
 static void handle_save_movie(int socket_fd) {
     struct movie m;
+    printf("operation: handle_save_movie\n");
+
     if (recv(socket_fd, &m, sizeof(m), 0) <= 0) {
         perror("recv movie");
         return;
     }
 
-    printf("Adicionar filme: %s (%d), dirigido por %s\n", m.title, m.year, m.director);
-    printf("Gêneros (%d):\n", m.genre_count);
-    for (int i = 0; i < m.genre_count; i++) {
-        printf("- %s\n", m.genres[i]);
-    }
+    int id = add_movie(&m);
+
+    char msg[100];
+    if (id >= 0) snprintf(msg, sizeof(msg), "Filme '%s' adicionado com sucesso !", m.title);
+    else snprintf(msg, sizeof(msg),"Erro ao salvar filme");
+
+    send(socket_fd, msg, strlen(msg), 0);
+
 }
 
 static void handle_add_genre(int socket_fd) {
+    printf("operation: handle_add_genre");
+
     struct genre_addition_params gap;
     if (recv(socket_fd, &gap, sizeof(gap), 0) <= 0) {
-        perror("recv gender addition");
+        perror("recv genre addition");
         return;
     }
 
-    printf("Adicionar gênero: %s ao filme com id %d\n", gap.genre, gap.id);
+    int result = add_genre(gap.id, gap.genre);
+    if (result == 1) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Gênero \"%s\" adicionado ao filme de id %d.", gap.genre, gap.id);
+        send(socket_fd, msg, strlen(msg), 0);
+    } else if (result == -1) {
+        char msg[] = "Filme já possui esse gênero.";
+        send(socket_fd, msg, strlen(msg), 0);
+    } else if (result == -2) {
+        char msg[] = "Limite de gêneros atingido (máximo 3).";
+        send(socket_fd, msg, strlen(msg), 0);
+    } else {
+        char msg[] = "Filme não encontrado.";
+        send(socket_fd, msg, strlen(msg), 0);
+    }
 }
+
 
 static void handle_remove_movie(int socket_fd) {
     int id;
+    printf("operation: handle_remove_movie");
+
     if (recv(socket_fd, &id, sizeof(int), 0) <= 0) {
         perror("recv id for removing movie");
         return;
     }
 
-    printf("Remover filme com o id %d\n", id);
+    int result = remove_movie(id);
+    if (result) {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Filme com id %d removido com sucesso.", id);
+        send(socket_fd, msg, strlen(msg), 0);
+    } else {
+        char msg[100];
+        snprintf(msg, sizeof(msg), "Filme com id %d não encontrado.", id);
+        send(socket_fd, msg, strlen(msg), 0);
+    }
 }
+
 
 static void handle_list_titles(int socket_fd) {
-    printf("Listar títulos e ids de todos os filmes\n");
+    struct movie movies[MAX_MOVIES];
+    int count = list_movies(movies, MAX_MOVIES);
+    printf("operation: handle_list_titles");
+
+    char buffer[2048] = {0};
+    for (int i = 0; i < count; i++) {
+        char line[200];
+        snprintf(line, sizeof(line), "ID: %d - Título: %s\n", movies[i].id, movies[i].title);
+        strcat(buffer, line);
+    }
+
+    if (count == 0) {
+        strcpy(buffer, "Nenhum filme cadastrado.");
+    }
+
+    send(socket_fd, buffer, strlen(buffer), 0);
 }
 
+
 static void handle_list_all(int socket_fd) {
-    printf("Listar todos os dados de todos os filmes\n");
+    struct movie movies[MAX_MOVIES];
+    int count = list_movies(movies, MAX_MOVIES);
+    printf("operation: handle_list_all");
+
+
+    char buffer[4096] = {0};
+    for (int i = 0; i < count; i++) {
+        char line[512];
+        snprintf(line, sizeof(line),
+            "ID: %d\nTítulo: %s\nDiretor: %s\nAno: %d\nGêneros: ",
+            movies[i].id, movies[i].title, movies[i].director, movies[i].year);
+
+        strcat(buffer, line);
+        for (int j = 0; j < movies[i].genre_count; j++) {
+            strcat(buffer, movies[i].genres[j]);
+            if (j < movies[i].genre_count - 1) strcat(buffer, ", ");
+        }
+        strcat(buffer, "\n\n");
+    }
+
+    if (count == 0) {
+        strcpy(buffer, "Nenhum filme cadastrado.");
+    }
+
+    send(socket_fd, buffer, strlen(buffer), 0);
 }
+
+
+static void handle_list_by_id(int socket_fd) {
+    int id;
+    printf("operation: handle_list_by_id");
+
+    if (recv(socket_fd, &id, sizeof(id), 0) <= 0) {
+        perror("recv id");
+        return;
+    }
+
+    struct movie m;
+    if (get_movie_by_id(id, &m)) {
+        char msg[512];
+        snprintf(msg, sizeof(msg),
+            "ID: %d\nTítulo: %s\nDiretor: %s\nAno: %d\nGêneros: ",
+            m.id, m.title, m.director, m.year);
+
+        for (int i = 0; i < m.genre_count; i++) {
+            strcat(msg, m.genres[i]);
+            if (i < m.genre_count - 1) strcat(msg, ", ");
+        }
+
+        send(socket_fd, msg, strlen(msg), 0);
+    } else {
+        char *msg = "Filme não encontrado.";
+        send(socket_fd, msg, strlen(msg), 0);
+    }
+}
+
 
 static void handle_list_by_genre(int socket_fd) {
     char genre[MAX_GENRE_LEN];
+    printf("operation: handle_list_by_genre");
+
     if (recv(socket_fd, genre, sizeof(genre), 0) <= 0) {
         perror("recv genre");
         return;
     }
 
-    printf("Listar todos os filmes de gênero %s\n", genre);
-}
+    struct movie movies[MAX_MOVIES];
+    int count = list_movies_by_genre(genre, movies, MAX_MOVIES);
 
-static void handle_list_by_year(int socket_fd) {
-    int year;
-    if (recv(socket_fd, &year, sizeof(year), 0) <= 0) {
-        perror("recv year");
-        return;
+    char buffer[4096] = {0};
+    for (int i = 0; i < count; i++) {
+        char line[512];
+        snprintf(line, sizeof(line),
+            "ID: %d\nTítulo: %s\nDiretor: %s\nAno: %d\n\n",
+            movies[i].id, movies[i].title, movies[i].director, movies[i].year);
+        strcat(buffer, line);
     }
 
-    printf("Listar todos os filmes do ano %d\n", year);
-}
-
-static void handle_list_by_director(int socket_fd) {
-    char director[MAX_DIRECTOR_LEN];
-    if (recv(socket_fd, director, sizeof(director), 0) <= 0) {
-        perror("recv director");
-        return;
+    if (count == 0) {
+        snprintf(buffer, sizeof(buffer), "Nenhum filme encontrado no gênero \"%s\".", genre);
     }
 
-    printf("Listar todos os filmes de um determinado diretor %s\n", director);
+    send(socket_fd, buffer, strlen(buffer), 0);
 }
+
+
+
 
 static void handle_invalid_operation(int socket_fd, int operation) {
     printf("Operação inválida: %d\n", operation);
@@ -111,20 +217,17 @@ void process_message(int socket_fd) {
         case OP_REMOVE_MOVIE:
             handle_remove_movie(socket_fd);
             break;
-        case OP_LIST_TITLES:
+        case OP_LIST_ALL_MOVIES_TITLES_AND_IDS:
             handle_list_titles(socket_fd);
             break;
-        case OP_LIST_ALL:
+        case OP_LIST_ALL_MOVIES_INFO:
             handle_list_all(socket_fd);
             break;
-        case OP_LIST_BY_GENRE:
+        case OP_LIST_MOVIE_BY_ID:
+            handle_list_by_id(socket_fd);
+            break;
+        case OP_LIST_MOVIES_BY_GENRE:
             handle_list_by_genre(socket_fd);
-            break;
-        case OP_LIST_BY_YEAR:
-            handle_list_by_year(socket_fd);
-            break;
-        case OP_LIST_BY_DIRECTOR:
-            handle_list_by_director(socket_fd);
             break;
         default:
             handle_invalid_operation(socket_fd, operation);
@@ -187,6 +290,7 @@ int main() {
         }
 
         inet_ntop(AF_INET, &(cliaddr.sin_addr), client_ip, sizeof(client_ip));
+        printf("\n========================================\n");
         printf("server: got connection from %s\n", client_ip);
 
         // fork cria um processo filho com return == 0 para ser usado para atender ao cliente recebido:
