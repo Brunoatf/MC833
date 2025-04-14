@@ -6,10 +6,11 @@
 #include <sys/socket.h>
 #include "movie.h"
 #include "json_database.h"
-#include <pthread.h>
+#include <semaphore.h>   
+#include <fcntl.h>       
 
-//Mutex para resolver o problema de concorrencia
-pthread_mutex_t json_mutex = PTHREAD_MUTEX_INITIALIZER;
+//Utilizando semáfaros para concorrencia entre processos iniciados por fork
+sem_t *json_semaphore;
 
 
 static void handle_save_movie(int socket_fd) {
@@ -25,9 +26,11 @@ static void handle_save_movie(int socket_fd) {
         return;
     }
 
-    pthread_mutex_lock(&json_mutex);
+    //printf("Vou tentar pegar o LOCK\n"); -> APENAS PARA TESTE DE CONCORRENCIA
+    sem_wait(json_semaphore);
+    //printf("Peguei o LOCK\n"); -> APENAS PARA TESTE DE CONCORRENCIA
     int id = add_movie(&m);
-    pthread_mutex_unlock(&json_mutex);
+    sem_post(json_semaphore);
 
     char msg[100];
     if (id >= 0) snprintf(msg, sizeof(msg), "Filme '%d' adicionado com sucesso !", id);
@@ -50,9 +53,9 @@ static void handle_add_genre(int socket_fd) {
         return;
     }
 
-    pthread_mutex_lock(&json_mutex);
+    sem_wait(json_semaphore);
     int result = add_genre(gap.id, gap.genre);
-    pthread_mutex_unlock(&json_mutex);
+    sem_post(json_semaphore);
 
     if (result == 1) {
         char msg[100];
@@ -84,9 +87,9 @@ static void handle_remove_movie(int socket_fd) {
         return;
     }
 
-    pthread_mutex_lock(&json_mutex);
+    sem_wait(json_semaphore);
     int result = remove_movie(id);
-    pthread_mutex_unlock(&json_mutex);
+    sem_post(json_semaphore);
 
     if (result) {
         char msg[100];
@@ -173,7 +176,7 @@ static void handle_list_by_id(int socket_fd) {
 
     struct movie m;
 
-    pthread_mutex_lock(&json_mutex);
+    sem_wait(json_semaphore);
     if (get_movie_by_id(id, &m)) {
         char msg[512];
         snprintf(msg, sizeof(msg),
@@ -190,7 +193,7 @@ static void handle_list_by_id(int socket_fd) {
         char *msg = "Filme não encontrado.";
         send(socket_fd, msg, strlen(msg), 0);
     }
-    pthread_mutex_unlock(&json_mutex);
+    sem_post(json_semaphore);
 
 }
 
@@ -210,9 +213,9 @@ static void handle_list_by_genre(int socket_fd) {
 
     struct movie movies[MAX_MOVIES];
 
-    pthread_mutex_lock(&json_mutex);
+    sem_wait(json_semaphore);
     int count = list_movies_by_genre(genre, movies, MAX_MOVIES);
-    pthread_mutex_unlock(&json_mutex);
+    sem_post(json_semaphore);
 
     char buffer[4096] = {0};
     for (int i = 0; i < count; i++) {
@@ -331,6 +334,13 @@ int main() {
 
     printf("server: waiting for connections...\n");
 
+    //Inicializacao dos semáforo
+    json_semaphore = sem_open("/json_sem", O_CREAT, 0644, 1);
+    if (json_semaphore == SEM_FAILED) {
+        perror("sem_open");
+        exit(1);
+    }
+
     while (1) {
         sin_size = sizeof(cliaddr);
         new_fd = accept(sockfd, (struct sockaddr *)&cliaddr, &sin_size);
@@ -349,6 +359,7 @@ int main() {
             process_message(new_fd);
             close(new_fd);
             exit(0);
+            sem_close(json_semaphore);
         }
 
         close(new_fd);

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "json_database.h"
 #include "cJSON.h"
+ #include <unistd.h> // para utilizar a funcao sleep e testar concorrencia
 
 static int generate_new_id(struct movie movies[], int count) {
     /* 
@@ -124,6 +125,9 @@ int add_movie(struct movie *m) {
     m->id = new_id;
     movies[count] = *m;
     count++;
+
+    // Simula operação demorada para testar concorrência entre clientes
+    //sleep(30);  -> APENAS PARA TESTE DE CONCORRENCIA
 
     if (save_movies(movies, count)) {
         return new_id;
