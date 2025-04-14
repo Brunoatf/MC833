@@ -6,7 +6,7 @@
 
 #define MAX_TITLE_LEN 100
 #define MAX_DIRECTOR_LEN 100
-#define MAX_GENRES 3
+#define MAX_GENRES 10
 #define MAX_GENRE_LEN 20
 
 struct movie {

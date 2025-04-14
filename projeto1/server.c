@@ -13,6 +13,10 @@ pthread_mutex_t json_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 static void handle_save_movie(int socket_fd) {
+    /* 
+    * Recebe um filme do cliente, salva no banco de dados e 
+    * envia uma mensagem de confirmação com o ID ou erro.
+    */
     struct movie m;
     printf("operation: handle_save_movie\n");
 
@@ -34,6 +38,10 @@ static void handle_save_movie(int socket_fd) {
 }
 
 static void handle_add_genre(int socket_fd) {
+    /* 
+    * Recebe um ID de filme e um novo gênero do cliente,
+    * tenta adicionar o gênero ao filme e envia o resultado.
+    */
     struct genre_addition_params gap;
     printf("operation: handle_add_genre");
 
@@ -54,7 +62,7 @@ static void handle_add_genre(int socket_fd) {
         char msg[] = "Filme já possui esse gênero.";
         send(socket_fd, msg, strlen(msg), 0);
     } else if (result == -2) {
-        char msg[] = "Limite de gêneros atingido (máximo 3).";
+        char msg[] = "Limite de gêneros atingido.";
         send(socket_fd, msg, strlen(msg), 0);
     } else {
         char msg[] = "Filme não encontrado.";
@@ -64,6 +72,10 @@ static void handle_add_genre(int socket_fd) {
 
 
 static void handle_remove_movie(int socket_fd) {
+    /* 
+    * Recebe o ID de um filme e remove o filme do banco.
+    * Retorna ao cliente uma mensagem de sucesso ou erro.
+    */
     int id;
     printf("operation: handle_remove_movie");
 
@@ -89,6 +101,10 @@ static void handle_remove_movie(int socket_fd) {
 
 
 static void handle_list_titles(int socket_fd) {
+    /* 
+    * Lista todos os filmes cadastrados mostrando apenas
+    * seus IDs e títulos. Envia o resultado ao cliente.
+    */
     struct movie movies[MAX_MOVIES];
     printf("operation: handle_list_titles");
 
@@ -110,6 +126,10 @@ static void handle_list_titles(int socket_fd) {
 
 
 static void handle_list_all(int socket_fd) {
+    /* 
+    * Lista todas as informações completas de todos os filmes 
+    * cadastrados e envia em formato formatado ao cliente.
+    */
     struct movie movies[MAX_MOVIES];
     printf("operation: handle_list_all");
 
@@ -139,6 +159,10 @@ static void handle_list_all(int socket_fd) {
 
 
 static void handle_list_by_id(int socket_fd) {
+    /* 
+    * Recebe um ID do cliente, busca o filme correspondente 
+    * e envia suas informações completas. Caso não encontre, avisa.
+    */
     int id;
     printf("operation: handle_list_by_id");
 
@@ -172,6 +196,10 @@ static void handle_list_by_id(int socket_fd) {
 
 
 static void handle_list_by_genre(int socket_fd) {
+    /* 
+    * Recebe um gênero do cliente, filtra os filmes com esse gênero 
+    * e envia os resultados encontrados. Caso nenhum, informa.
+    */
     char genre[MAX_GENRE_LEN];
     printf("operation: handle_list_by_genre");
 
@@ -203,6 +231,10 @@ static void handle_list_by_genre(int socket_fd) {
 }
 
 static void handle_invalid_operation(int socket_fd, int operation) {
+    /* 
+    * Envia uma mensagem de erro ao cliente indicando que 
+    * a operação recebida não é válida.
+    */
     printf("Operação inválida: %d\n", operation);
     char error_msg[] = "Operação inválida";
     send(socket_fd, error_msg, strlen(error_msg), 0);
@@ -308,7 +340,6 @@ int main() {
         }
 
         inet_ntop(AF_INET, &(cliaddr.sin_addr), client_ip, sizeof(client_ip));
-        printf("\n========================================\n");
         printf("server: got connection from %s\n", client_ip);
 
         // fork cria um processo filho com return == 0 para ser usado para atender ao cliente recebido:

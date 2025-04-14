@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,24 +8,11 @@
 
 #define MAXDATASIZE 4096
 
-void flush_input() {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-}
-
-void read_string(const char *prompt, char *dest, int max_len) {
-    printf("%s", prompt);
-    fgets(dest, max_len, stdin);
-    dest[strcspn(dest, "\n")] = '\0'; 
-}
-
-void read_int(const char *prompt, int *value) {
-    printf("%s", prompt);
-    scanf("%d", value);
-    flush_input();
-}
-
 void send_request(int sockfd, int operation, void *data, size_t data_size) {
+    /* 
+    * Envia uma operação e seus dados ao servidor via socket.
+    * Depois, recebe e exibe a resposta do servidor.
+    */
     send(sockfd, &operation, sizeof(int), 0);
     if (data && data_size > 0)
         send(sockfd, data, data_size, 0);
@@ -42,6 +28,10 @@ void send_request(int sockfd, int operation, void *data, size_t data_size) {
 }
 
 void display_interface(int sockfd) {
+    /* 
+    * Exibe a interface de opções do cliente, 
+    * coleta dados do usuário e chama a função de envio adequada.
+    */
     printf("Consulta para Streaming de Filmes:\n");
     printf("1. Adicionar filme\n");
     printf("2. Adicionar gênero a filme\n");
@@ -55,70 +45,99 @@ void display_interface(int sockfd) {
 
     int op;
     scanf("%d", &op);
-    flush_input();
+    getchar(); 
 
     switch (op) {
         case 1: {
             struct movie m;
-            m.id = 0; 
-            read_string("Título: ", m.title, MAX_TITLE_LEN);
-            read_string("Diretor: ", m.director, MAX_DIRECTOR_LEN);
-            read_int("Ano: ", &m.year);
-            read_int("Quantidade de gêneros (máx 3): ", &m.genre_count);
+            m.id = 0;
+
+            printf("Título: ");
+            fgets(m.title, MAX_TITLE_LEN, stdin);
+            m.title[strcspn(m.title, "\n")] = '\0';
+
+            printf("Diretor: ");
+            fgets(m.director, MAX_DIRECTOR_LEN, stdin);
+            m.director[strcspn(m.director, "\n")] = '\0';
+
+            printf("Ano: ");
+            scanf("%d", &m.year);
+
+            printf("Quantidade de gêneros (mín 1): ");
+            scanf("%d", &m.genre_count);
+            getchar(); 
 
             if (m.genre_count > MAX_GENRES) m.genre_count = MAX_GENRES;
+
             for (int i = 0; i < m.genre_count; i++) {
-                char prompt[50];
-                snprintf(prompt, sizeof(prompt), "Gênero %d: ", i + 1);
-                read_string(prompt, m.genres[i], MAX_GENRE_LEN);
+                printf("Gênero %d: ", i + 1);
+                fgets(m.genres[i], MAX_GENRE_LEN, stdin);
+                m.genres[i][strcspn(m.genres[i], "\n")] = '\0';
             }
 
             send_request(sockfd, OP_SAVE_MOVIE, &m, sizeof(m));
             break;
         }
+
         case 2: {
             struct genre_addition_params gap;
-            read_int("ID do filme: ", &gap.id);
-            read_string("Novo gênero: ", gap.genre, MAX_GENRE_LEN);
+
+            printf("ID do filme: ");
+            scanf("%d", &gap.id);
+            getchar();
+
+            printf("Novo gênero: ");
+            fgets(gap.genre, MAX_GENRE_LEN, stdin);
+            gap.genre[strcspn(gap.genre, "\n")] = '\0';
+
             send_request(sockfd, OP_ADD_GENRE, &gap, sizeof(gap));
             break;
         }
+
         case 3: {
             int id;
-            read_int("ID do filme a remover: ", &id);
+            printf("ID do filme a remover: ");
+            scanf("%d", &id);
             send_request(sockfd, OP_REMOVE_MOVIE, &id, sizeof(id));
             break;
         }
+
         case 4:
             send_request(sockfd, OP_LIST_ALL_MOVIES_TITLES_AND_IDS, NULL, 0);
             break;
+
         case 5:
             send_request(sockfd, OP_LIST_ALL_MOVIES_INFO, NULL, 0);
             break;
+
         case 6: {
             int id;
-            read_int("ID do filme: ", &id);
+            printf("ID do filme: ");
+            scanf("%d", &id);
             send_request(sockfd, OP_LIST_MOVIE_BY_ID, &id, sizeof(id));
             break;
         }
+
         case 7: {
             char genre[MAX_GENRE_LEN];
-            read_string("Gênero: ", genre, MAX_GENRE_LEN);
+            printf("Gênero: ");
+            fgets(genre, MAX_GENRE_LEN, stdin);
+            genre[strcspn(genre, "\n")] = '\0';
             send_request(sockfd, OP_LIST_MOVIES_BY_GENRE, genre, sizeof(genre));
             break;
         }
+
         case 0:
             printf("Encerrando...\n");
             return;
+
         default:
             printf("Opção inválida!\n");
             break;
     }
-    printf("----------------------------------------\n");
-    return;
-    
-}
 
+    printf("----------------------------------------\n");
+}
 
 int main(int argc, char *argv[]) {
     /*
