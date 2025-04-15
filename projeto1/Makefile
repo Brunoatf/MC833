@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 
-all: server client
+all: server client movies.json
 
 server: server.c json_database.c cJSON.c movie.h
 	$(CC) $(CFLAGS) server.c json_database.c cJSON.c -o server -pthread
@@ -9,6 +9,8 @@ server: server.c json_database.c cJSON.c movie.h
 client: client.c movie.h
 	$(CC) $(CFLAGS) client.c -o client
 
+movies.json:
+	@echo "[]" > movies.json
+
 clean:
-	rm -f server client
-	
+	rm -f server client movies.json
