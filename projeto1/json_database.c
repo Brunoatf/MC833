@@ -25,6 +25,11 @@ int load_movies(struct movie movies[], int max) {
     */
     FILE *file = fopen(JSON_FILE, "r");
 
+    if (!file) {
+        perror("Banco de Dados JSON está faltando.\n");
+        return 0;
+    }
+
     fseek(file, 0, SEEK_END);
     long size = ftell(file);
     rewind(file);
@@ -94,6 +99,11 @@ int save_movies(struct movie movies[], int count) {
 
     char *output = cJSON_Print(json);
     FILE *file = fopen(JSON_FILE, "w");
+
+    if (!file) {
+        perror("Banco de Dados JSON está faltando.\n");
+        return 0;
+    }
 
     fputs(output, file);
     fclose(file);
