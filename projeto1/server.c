@@ -10,7 +10,7 @@
 #include <fcntl.h>       
 
 //Utilizando semáfaros para concorrencia entre processos iniciados por fork
-sem_t *json_semaphore;
+sem_t *json_semaphore;  
 
 
 static void handle_save_movie(int socket_fd) {
@@ -304,7 +304,7 @@ int main() {
      *   1 em caso de erro na inicialização do socket
      */
 
-    int sockfd, new_fd; // sockfd é para o socket que faz o servidor escutar e new_fd é o usado para conexões TCP novas
+    int sockfd, new_fd; 
     struct sockaddr_in servaddr, cliaddr;
     socklen_t sin_size;
     char client_ip[INET_ADDRSTRLEN];
