@@ -4,11 +4,9 @@ import matplotlib.pyplot as plt
 from scapy.all import rdpcap, IP, ICMP
 import os
 
-# Função para analisar um arquivo PCAP
 def analisar_pcap(caminho_arquivo):
     pacotes = rdpcap(caminho_arquivo)
-    
-    # Filtra apenas pacotes ICMP que tenham camada IP
+
     pacotes_icmp = [pkt for pkt in pacotes if IP in pkt and ICMP in pkt]
     
     if not pacotes_icmp:
@@ -30,19 +28,15 @@ def analisar_pcap(caminho_arquivo):
 
     df = pd.DataFrame(dados)
 
-    # Contagem de pacotes
     total_pacotes = len(df)
 
-    # Cálculo de throughput (em bytes por segundo)
     duracao = df["tempo"].iloc[-1] - df["tempo"].iloc[0]
     total_bytes = df["tamanho"].sum()
     throughput = total_bytes / duracao if duracao > 0 else 0
 
-    # Intervalo médio entre pacotes
     df["intervalo"] = df["tempo"].diff()
     intervalo_medio = df["intervalo"].mean()
 
-    # Exibe resultados no terminal
     print(f"--- Análise de {caminho_arquivo} ---")
     print(f"Total de pacotes ICMP: {total_pacotes}")
     print(f"IPs de origem únicos: {df['src'].unique()}")
@@ -50,7 +44,6 @@ def analisar_pcap(caminho_arquivo):
     print(f"Throughput médio: {throughput:.2f} bytes/s")
     print(f"Intervalo médio entre pacotes: {intervalo_medio:.6f} s\n")
 
-    # Gráficos
     nome_base = os.path.basename(caminho_arquivo).replace(".pcap", "")
     
     plt.figure(figsize=(10, 6))
@@ -71,7 +64,6 @@ def analisar_pcap(caminho_arquivo):
     plt.savefig(f"{nome_base}_hist_intervalos.png")
     plt.close()
 
-# Arquivos a serem analisados
 arquivos_pcap = ["h1h3.pcap", "h2h4.pcap"]
 
 for arquivo in arquivos_pcap:
