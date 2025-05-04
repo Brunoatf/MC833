@@ -50,11 +50,12 @@ server: waiting for connections...
 
 ### 2. Inicie uma conexão
 
-Em outro terminal:
+Em outro máquina:
 
 ```bash
-./client <ip>
+./client <ip-máquina-servidor>
 ```
+- Vale ressaltar que os testes foram feitos no mesmo WIFI utilizando computadores diferentes
 
 Você verá uma **interface**:
 
