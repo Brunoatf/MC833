@@ -7,8 +7,7 @@ Este script realiza a análise de arquivos `.pcap` contendo pacotes ICMP, captur
 O script executa as seguintes tarefas:
 
 - **Leitura dos arquivos**: `s1-eth1-200.pcap` e `s1-eth2-200.pcap`
-- 
-Caso queria analisar outros pacotes é necessário alterar na função package_analyzer.py e adicnionar o nome dos novos arquivos em :
+- Caso queria analisar outros pacotes é necessário alterar na função package_analyzer.py e adicnionar o nome dos novos arquivos em :
 
 ```bash
 if __name__ == "__main__":
