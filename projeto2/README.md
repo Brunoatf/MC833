@@ -1,44 +1,50 @@
+# 📦 Analisador de Pacotes ICMP (`package_analyzer.py`)
 
-# Analisador de Pacotes ICMP (`package_analyzer.py`)
+Este script realiza a análise de arquivos `.pcap` contendo pacotes ICMP, capturados por ferramentas como Wireshark e Mininet. Ele extrai métricas úteis sobre o tráfego de rede e gera gráficos que ajudam a visualizar o comportamento dos pacotes.
 
-Este script analisa arquivos `.pcap` contendo pacotes ICMP (gerados via Wireshark e Mininet), extraindo métricas importantes de rede e gerando gráficos ilustrativos.
+## 🔍 Funcionalidades
 
-## O que o script faz:
-- Lê os arquivos `h1h3.pcap` e `h2h4.pcap`
-- Filtra pacotes ICMP
-- Extrai:
+O script executa as seguintes tarefas:
+
+- **Leitura dos arquivos**: `s1-eth1-200.pcap` e `s1-eth2-200.pcap`
+Caso queria analisar outros pacotes é necess-ario alterar na função package_analyzer.py e adicnionar o nome dos novos arquivos em :
+
+```bash
+if __name__ == "__main__":
+    arquivos_pcap = ["s1-eth1-200.pcap", "s1-eth2-200.pcap"]
+
+    for arquivo in arquivos_pcap:
+        analisar_pcap(arquivo)
+```
+
+- **Filtragem**: Considera apenas pacotes ICMP
+- **Extração de métricas**:
   - Endereços IP de origem e destino
   - Contagem total de pacotes
-  - Throughput médio (bytes/segundo)
-  - Intervalo médio entre pacotes (segundos)
-- Gera gráficos:
-  - Tamanho dos pacotes ao longo do tempo
-  - Histograma dos intervalos entre pacotes
+  - Tamanho total transmitido (bytes)
+  - Throughput médio (em bytes por segundo)
+  - Intervalo médio entre pacotes (em segundos)
+- **Geração de gráficos**:
+  - Evolução do tamanho dos pacotes ao longo do tempo
+  - Distribuição dos intervalos entre chegadas de pacotes (histograma)
+  - Evolução do throughput por segundo
 
-## Pré-requisitos
+## 📦 Pré-requisitos
 
-Instale as bibliotecas necessárias com:
-
-```bash
-pip install scapy pandas numpy matplotlib nest_asyncio
-```
-
-## Como rodar
-
-1. Certifique-se de ter os arquivos `h1h3.pcap` e `h2h4.pcap` na mesma pasta do script.
-2. Execute o script:
+As dependências do projeto estão listadas no arquivo `requirements.txt`. Para instalá-las corretamente, use o `make`:
 
 ```bash
-python package_analyzer.py
+make install
 ```
 
-## Saídas geradas
+Para rodar o script basta rodar o comando:
 
-Após a execução, você verá no diretório atual:
-- Arquivos de imagem `.png` com os gráficos gerados:
-  - `h1h3_tamanho_vs_tempo.png`
-  - `h1h3_hist_intervalos.png`
-  - `h2h4_tamanho_vs_tempo.png`
-  - `h2h4_hist_intervalos.png`
+```bash
+make all
+```
 
-Além disso, o terminal exibirá os dados extraídos de cada arquivo `.pcap`.
+Para limpar o venv e apagar as imagens criadas rode o comando:
+
+```bash
+make clean
+```

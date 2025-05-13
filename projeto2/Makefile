@@ -16,4 +16,4 @@ run:
 
 clean:
 	rm -rf $(ENV_NAME)
-	rm -f *_tamanho_vs_tempo.png *_hist_intervalos.png
+	rm -f *.png
