@@ -1,13 +1,14 @@
-# 📦 Analisador de Pacotes ICMP (`package_analyzer.py`)
+# Analisador de Pacotes ICMP (`package_analyzer.py`)
 
 Este script realiza a análise de arquivos `.pcap` contendo pacotes ICMP, capturados por ferramentas como Wireshark e Mininet. Ele extrai métricas úteis sobre o tráfego de rede e gera gráficos que ajudam a visualizar o comportamento dos pacotes.
 
-## 🔍 Funcionalidades
+## Funcionalidades
 
 O script executa as seguintes tarefas:
 
 - **Leitura dos arquivos**: `s1-eth1-200.pcap` e `s1-eth2-200.pcap`
-Caso queria analisar outros pacotes é necess-ario alterar na função package_analyzer.py e adicnionar o nome dos novos arquivos em :
+- 
+Caso queria analisar outros pacotes é necessário alterar na função package_analyzer.py e adicnionar o nome dos novos arquivos em :
 
 ```bash
 if __name__ == "__main__":
@@ -29,7 +30,7 @@ if __name__ == "__main__":
   - Distribuição dos intervalos entre chegadas de pacotes (histograma)
   - Evolução do throughput por segundo
 
-## 📦 Pré-requisitos
+## Pré-requisitos
 
 As dependências do projeto estão listadas no arquivo `requirements.txt`. Para instalá-las corretamente, use o `make`:
 
